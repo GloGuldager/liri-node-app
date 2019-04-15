@@ -25,177 +25,174 @@ moment().format();
 // Include the axios npm package (Don't forget to run "npm install axios" in this folder first!)
 var axios = require("axios");
 
+//****************************************
+//FUNCTION TO RUN QUESTION AND RESPONSES
+//****************************************
+
 //create function to call and recall set of LIRI questions
-var liriAsk = function() {
+var liriAsk = function () {
 
-  //create function to ask user if they want to do a new search
-    function confirm() {
+  //create function to ask user if they want to do a new search. Ask after every search.
+  function confirm() {
 
-        inquirer.prompt([
-                {
-                    type: "confirm",
-                    message: "Would you like to try a new search?",
-                    name: "confirm",
-                    default: false
-                }
-            ])
-            .then(answers => {
-                if (answers.confirm) {
-                    liriAsk();
-                }
-                else {
-                    console.log("Thank you for using Liri Bot!");
-                }
-            })
-            .catch(errors => {
-                console.log(`Error occurred: ${errors}`);
-            });
-    }
-    
-//setup first question to start LIRI bot. Give user 4 choices of searches to do.
+    //inquirer question objects for confirm function
     inquirer.prompt([
-        {
-            message: "Welcome to LIRI Bot. What would you like to search for? Choose option 1, 2, 3 or 4",
-            type: "rawlist",
-            name: "searchOptions",
-            choices: ["Find a concert date for a favorite artist or band", "Look up details for a favorite song", "Look up details for a favorite movie", "Do What It Says"],
-        },
+      {
+        type: "confirm",
+        message: "Would you like to try a new search?",
+        name: "confirm",
+        default: false
+      }
     ])
-        //grab user input if user selected concert search and ask followup question. 
-        .then(function (userChoice) {
-            if (userChoice.searchOptions.slice() === "Find a concert date for a favorite artist or band") {
-                inquirer.prompt([
-                    {
-                        type: "input",
-                        message: "Which band or artist would you like to search concert dates for?",
-                        name: "band",
-                        default: "Gloria Estefan"
-                    }
-                ])
+      .then(answers => {
+        if (answers.confirm) {
+          liriAsk();
+        }
+        else {
+          console.log("Thank you for using Liri Bot!");
+        }
+      })
+      .catch(errors => {
+        console.log(`Error occurred: ${errors}`);
+      });
+  }
 
-                    //grab user input from artist/band and run bandsintown search and display result to the console.
-                    .then(function (userChoice) {
-                        axios.get("https://rest.bandsintown.com/artists/" + userChoice.band + "/events?app_id=codingbootcamp")
-                            .then(function (response) {
-                                for (var i = 0; i < 5; i++) {
-                                    var concertResults = "******************************************************************" +
-                                        "\nVenue Name: " + response.data[i].venue.name +
-                                        "\nVenue Location: " + response.data[i].venue.city +
-                                        "\nDate of the Event: " + moment(response.data[i].datetime).format("MM/DD/YYYY") +
-                                        "\n******************************************************************";
-                                    console.log(concertResults);
-                                    confirm();
-                                }
-                            })
-                            .catch(function (error) {
-                                console.log("Sorry. There are no concerts scheduled at this time");
-                                confirm();
-                            });
-                    });
+  //setup first question to start LIRI bot. Give user 4 choices of searches to do. Inquirer question object.
+  inquirer.prompt([
+    {
+      message: "Welcome to LIRI Bot. What would you like to search for? Choose option 1, 2, 3 or 4",
+      type: "rawlist",
+      name: "searchOptions",
+      choices: ["Find a concert date for a favorite artist or band", "Look up details for a favorite song", "Look up details for a favorite movie", "Do What It Says"],
+    },
+  ])
+    //grab user input if user selected concert search and ask followup question. 
+    .then(function (userChoice) {
+      if (userChoice.searchOptions.slice() === "Find a concert date for a favorite artist or band") {
+        inquirer.prompt([
+          {
+            type: "input",
+            message: "Which band or artist would you like to search dates for? (up to 5 will be shown)",
+            name: "band",
+            default: "Gloria Estefan"
+          }
+        ])
 
+          //grab user input from artist/band and run bandsintown search and display result to the console.
+          .then(function (userChoice) {
+            axios.get("https://rest.bandsintown.com/artists/" + userChoice.band + "/events?app_id=codingbootcamp")
+              .then(function (response) {
+                for (var i = 0; i < 6; i++) {
+                  var concertResults = "\nVenue Name: " + response.data[i].venue.name +
+                    "\nVenue Location: " + response.data[i].venue.city +
+                    "\nDate of the Event: " + moment(response.data[i].datetime).format("MM/DD/YYYY") +
+                    "\n******************************************************************";
+                  console.log(concertResults);
+                }
+                // confirm();
+              })
+              .catch(function (error) {
+                console.log("Sorry. There are either no additional concerts or none scheduled at this time");
+                confirm();
+              })
+          });
+
+      }
+
+      //grab user input if user selected song search and ask followup question. 
+
+      else if (userChoice.searchOptions.slice() === "Look up details for a favorite song") {
+        inquirer.prompt([
+          {
+            type: "input",
+            message: "What song would you like to get details for?",
+            name: "song",
+            default: "The Doors:Gloria"
+          }
+        ])
+          //grab user input from song and run spotify search and display result to the console.
+
+          .then(function (userChoice) {
+            spotify.search({
+              type: "artist,track",
+              query: userChoice.song,
+            }, function (err, response) {
+              if (err) {
+                return console.log("Error occurred: " + err);
+              }
+              var spotifySearch = "\nArtist(s): " + response.tracks.items[0].artists[0].name +
+                "\nSong Name: " + response.tracks.items[0].name +
+                "\nAlbum Name: " + response.tracks.items[0].album.name +
+                "\nPreview Link: " + response.tracks.items[0].external_urls.spotify +
+                "\n******************************************************************";
+              console.log(spotifySearch);
+              confirm();
+            })
+          })
+      }
+      //grab user input if user selected movie search and ask followup question. 
+
+      else if (userChoice.searchOptions.slice() === "Look up details for a favorite movie") {
+        inquirer.prompt([
+          {
+            type: "input",
+            message: "What movie would you like to get details for?",
+            name: "movie",
+            default: "Wonder Woman"
+          }
+        ])
+          //grab user input from movie and run OMDB movie search and display result to the console.
+
+          .then(function (userChoice) {
+            axios.get("http://www.omdbapi.com/?t=" + userChoice.movie + "&y=&plot=short&apikey=trilogy")
+              .then(function (response) {
+                var movieResults = "\nTitle " + response.data.Title +
+                  "\nYear: " + response.data.Year +
+                  "\nIMDB Rating: " + response.data.Ratings[0].Value +
+                  "\nRotten Tomatoes Rating: " + response.data.Ratings[1].Value +
+                  "\nCountry: " + response.data.Country +
+                  "\nLanguage: " + response.data.Language +
+                  "\nPlot: " + response.data.Plot +
+                  "\nActors " + response.data.Actors +
+                  "\n******************************************************************";
+                console.log(movieResults);
+                confirm();
+
+              })
+              .catch(function (error) {
+                console.log("Sorry, there was no information available");
+                confirm();
+              });
+          })
+      }
+      //grab user input if user selected "Do What It Says" search and run function to readFile of random.text and show results to console. 
+
+      else if (userChoice.searchOptions.slice() === "Do What It Says") {
+        fs.readFile("random.txt", "utf8", function (error, data) {
+          if (error) {
+            return console.log(error);
+          }
+          var textArray = data.split(","); spotify.search({
+            type: "artist,track",
+            query: textArray[1],
+          }, function (err, response) {
+            if (err) {
+              return console.log("Error occurred: " + err);
             }
-            //grab user input if user selected song search and ask followup question. 
+            var doWhatSays = "\nArtist(s): " + response.tracks.items[0].artists[0].name +
+              "\nSong Name: " + response.tracks.items[0].name +
+              "\nAlbum Name: " + response.tracks.items[0].album.name +
+              "\nPreview Link: " + response.tracks.items[0].external_urls.spotify +
+              "\n******************************************************************";
+            console.log(doWhatSays);
+            confirm();
+          })
 
-            else if (userChoice.searchOptions.slice() === "Look up details for a favorite song") {
-                inquirer.prompt([
-                    {
-                        type: "input",
-                        message: "What song would you like to get details for?",
-                        name: "song",
-                        default: "The Doors:Gloria"
-                    }
-                ])
-                    //grab user input from song and run spotify search and display result to the console.
-
-                    .then(function (userChoice) {
-                        spotify.search({
-                            type: "artist,track",
-                            query: userChoice.song,
-                        }, function (err, response) {
-                            if (err) {
-                                return console.log("Error occurred: " + err);
-                            }
-                            var spotifySearch = "******************************************************************" +
-                                "\nArtist(s): " + response.tracks.items[0].artists[0].name +
-                                "\nSong Name: " + response.tracks.items[0].name +
-                                "\nAlbum Name: " + response.tracks.items[0].album.name +
-                                "\nPreview Link: " + response.tracks.items[0].external_urls.spotify +
-                                "\n******************************************************************";
-                            console.log(spotifySearch);
-                            confirm();
-                        })
-                    })
-            }
-            //grab user input if user selected movie search and ask followup question. 
-
-            else if (userChoice.searchOptions.slice() === "Look up details for a favorite movie") {
-                inquirer.prompt([
-                    {
-                        type: "input",
-                        message: "What movie would you like to get details for?",
-                        name: "movie",
-                        default: "Wonder Woman"
-                    }
-                ])
-                    //grab user input from movie and run OMDB movie search and display result to the console.
-
-                    .then(function (userChoice) {
-                        axios.get("http://www.omdbapi.com/?t=" + userChoice.movie + "&y=&plot=short&apikey=trilogy")
-                            .then(function (response) {
-                                var movieResults = "******************************************************************" +
-                                    "\nTitle " + response.data.Title +
-                                    "\nYear: " + response.data.Year +
-                                    "\nIMDB Rating: " + response.data.Ratings[0].Value +
-                                    "\nRotten Tomatoes Rating: " + response.data.Ratings[1].Value +
-                                    "\nCountry: " + response.data.Country +
-                                    "\nLanguage: " + response.data.Language +
-                                    "\nPlot: " + response.data.Plot +
-                                    "\nActors " + response.data.Actors +
-                                    "\n******************************************************************";
-                                console.log(movieResults);
-                                confirm();
-
-                            })
-                            .catch(function (error) {
-                                console.log("Sorry, there was no information available");
-                                confirm();
-                            });
-                    })
-            }
-            //grab user input if user selected "Do What It Says" search and run function to readFile of random.text and show results to console. 
-
-            else if (userChoice.searchOptions.slice() === "Do What It Says") {
-                fs.readFile("random.txt", "utf8", function (error, data) {
-                    if (error) {
-                        return console.log(error);
-                    }
-                    var textArray = data.split(","); spotify.search({
-                        type: "artist,track",
-                        query: textArray[1],
-                    }, function (err, response) {
-                        if (err) {
-                            return console.log("Error occurred: " + err);
-                        }
-                        var doWhatSays = "******************************************************************" +
-                            "\nArtist(s): " + response.tracks.items[0].artists[0].name +
-                            "\nSong Name: " + response.tracks.items[0].name +
-                            "\nAlbum Name: " + response.tracks.items[0].album.name +
-                            "\nPreview Link: " + response.tracks.items[0].external_urls.spotify +
-                            "\n******************************************************************";
-                        console.log(doWhatSays);
-                        confirm();
-                    })
-
-                })
-            }
-        });
-
-        //     Adam Ravitz   [21 hours ago]
-    // @Gloria i have a function that gets fired after each search that has another prompt in it that will either fire the main liri function, or quit the app
-
-
-
+        })
+      }
+    });
 };
+//start Liri Bot function after all code has loaded
 liriAsk();
 
 
